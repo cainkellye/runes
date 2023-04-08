@@ -3,7 +3,7 @@ use crate::board::{Board, Field, Position};
 const PLAYER1_SYMBOL: Field = Field::Wealth;
 const PLAYER2_SYMBOL: Field = Field::Knowledge;
 
-pub struct Session<const SIZE: usize, P1: Player, P2: Player> {
+pub struct Game<const SIZE: usize, P1: Player, P2: Player> {
     pub board: Board<SIZE>,
     pub player1: P1,
     pub player2: P2,
@@ -27,13 +27,12 @@ pub trait Player {
     fn make_move<const SIZE: usize>(&self, board: &Board<SIZE>) -> Move;
 }
 
-impl<const SIZE: usize, P1: Player, P2: Player> Session<SIZE, P1, P2> {
+impl<const SIZE: usize, P1: Player, P2: Player> Game<SIZE, P1, P2> {
     pub fn new(mut player1: P1, mut player2: P2) -> Self {
         player1.set_symbol(PLAYER1_SYMBOL);
         player2.set_symbol(PLAYER2_SYMBOL);
         Self {
-            board: Board::<SIZE>::new()
-                .change(Position(SIZE / 2, SIZE / 2), Field::Birth),
+            board: Board::<SIZE>::new().change(Position(SIZE / 2, SIZE / 2), Field::Birth),
             player1,
             player2,
             game_over: false,
@@ -41,14 +40,40 @@ impl<const SIZE: usize, P1: Player, P2: Player> Session<SIZE, P1, P2> {
         }
     }
 
-    pub fn apply_move(&mut self, move_to_apply: Move) -> Result<(), String> {
+    pub fn start_loop(&mut self) {
+        while !self.game_over {
+            let player_move = if self.next_player == 1 {
+                self.player1.make_move(&self.board)
+            } else {
+                self.player2.make_move(&self.board)
+            };
+            match self.apply_move(player_move) {
+                Ok(symbol) => {
+                    if symbol == Field::Joy {
+                        self.game_over = true;
+                        break;
+                    }
+                    self.next_player = 3 - self.next_player;
+                },
+                Err(s) => println!("{}", s),
+            }
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.board = Board::<SIZE>::new().change(Position(SIZE / 2, SIZE / 2), Field::Birth);
+        self.game_over = false;
+        self.next_player = 1;
+    }
+
+    pub fn apply_move(&mut self, move_to_apply: Move) -> Result<Field, String> {
         if !self.is_valid_move(&move_to_apply) {
             return Err("Invalid move".to_string());
         }
         self.board = self
             .board
             .change(move_to_apply.position, move_to_apply.symbol);
-        return Ok(());
+        return Ok(move_to_apply.symbol);
     }
 
     pub fn valid_symbols_at(&self, position: &Position) -> Vec<Field> {
@@ -85,10 +110,13 @@ impl<const SIZE: usize, P1: Player, P2: Player> Session<SIZE, P1, P2> {
             valid.push(Field::Knowledge);
         }
         let player_symbol = self.next_player_symbol();
-        if birth_count == 1 && gift_count == 1 && empty_count == 5
-            && (knowledge_count == 1 && player_symbol == Field::Knowledge 
-                || wealth_count == 1 && player_symbol == Field::Wealth) {
-                valid.push(Field::Joy);
+        if birth_count == 1
+            && gift_count == 1
+            && empty_count == 5
+            && (knowledge_count == 1 && player_symbol == Field::Knowledge
+                || wealth_count == 1 && player_symbol == Field::Wealth)
+        {
+            valid.push(Field::Joy);
         }
         return valid;
     }
@@ -102,7 +130,11 @@ impl<const SIZE: usize, P1: Player, P2: Player> Session<SIZE, P1, P2> {
     }
 
     fn next_player_symbol(&self) -> Field {
-        if self.next_player == 1 { PLAYER1_SYMBOL } else { PLAYER2_SYMBOL }
+        if self.next_player == 1 {
+            PLAYER1_SYMBOL
+        } else {
+            PLAYER2_SYMBOL
+        }
     }
 
     fn is_valid_move(&self, move_to_check: &Move) -> bool {

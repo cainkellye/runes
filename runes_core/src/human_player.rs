@@ -1,4 +1,4 @@
-use crate::{session::{Move, Player}, board::Field};
+use crate::{game::{Move, Player}, board::Field};
 
 pub struct HumanPlayer {
     pub name: String,
