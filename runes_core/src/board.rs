@@ -7,7 +7,7 @@ pub struct Board<const SIZE: usize> {
 
 pub struct Position(pub usize, pub usize);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum Field {
     Empty = 0,
@@ -31,7 +31,7 @@ impl<const SIZE: usize> Board<SIZE> {
         return new;
     }
 
-    pub fn fields_around(&self, pos: Position) -> Vec<Field> {
+    pub fn fields_around(&self, pos: &Position) -> Vec<Field> {
         let mut around = Vec::with_capacity(8);
         for x in pos.0.max(1) - 1..=pos.0.min(SIZE - 2) + 1 {
             for y in pos.1.max(1) - 1..=pos.1.min(SIZE - 2) + 1 {
@@ -42,6 +42,10 @@ impl<const SIZE: usize> Board<SIZE> {
             }
         }
         return around;
+    }
+
+    pub fn is_empty(&self, pos: &Position) -> bool {
+        matches!(self.fields[pos.0][pos.1], Field::Empty)
     }
 }
 

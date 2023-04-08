@@ -1,4 +1,5 @@
 pub mod board;
+pub mod human_player;
 pub mod session;
 
 pub fn add(left: usize, right: usize) -> usize {
