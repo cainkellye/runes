@@ -1,0 +1,9 @@
+[workspace]
+members = [
+  "runes_core",
+  "runes_tui",
+]
+
+default-members = [
+  "runes_tui"
+]
