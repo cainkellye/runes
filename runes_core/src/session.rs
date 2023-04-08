@@ -1,10 +1,14 @@
 use crate::board::{Board, Field, Position};
 
+const PLAYER1_SYMBOL: Field = Field::Wealth;
+const PLAYER2_SYMBOL: Field = Field::Knowledge;
+
 pub struct Session<const SIZE: usize, P1: Player, P2: Player> {
     pub board: Board<SIZE>,
     pub player1: P1,
     pub player2: P2,
     pub game_over: bool,
+    pub next_player: u8,
 }
 
 pub struct Move {
@@ -19,30 +23,38 @@ impl Move {
 }
 
 pub trait Player {
+    fn set_symbol(&mut self, symbol: Field);
     fn make_move<const SIZE: usize>(&self, board: &Board<SIZE>) -> Move;
 }
 
 impl<const SIZE: usize, P1: Player, P2: Player> Session<SIZE, P1, P2> {
-    pub fn new(player1: P1, player2: P2) -> Self {
+    pub fn new(mut player1: P1, mut player2: P2) -> Self {
+        player1.set_symbol(PLAYER1_SYMBOL);
+        player2.set_symbol(PLAYER2_SYMBOL);
         Self {
-            board: Board::<SIZE>::new(),
+            board: Board::<SIZE>::new()
+                .change(Position(SIZE / 2, SIZE / 2), Field::Birth),
             player1,
             player2,
             game_over: false,
+            next_player: 1,
         }
     }
 
-    pub fn apply_move(&mut self, move_to_apply: Move) -> Result<(),String> {
-        if !self.is_valid_move(&move_to_apply) { 
+    pub fn apply_move(&mut self, move_to_apply: Move) -> Result<(), String> {
+        if !self.is_valid_move(&move_to_apply) {
             return Err("Invalid move".to_string());
         }
         self.board = self
             .board
             .change(move_to_apply.position, move_to_apply.symbol);
-        return Ok(())
+        return Ok(());
     }
 
     pub fn valid_symbols_at(&self, position: &Position) -> Vec<Field> {
+        if !self.board.is_empty(position) {
+            return vec![];
+        }
         let around = self.board.fields_around(position);
 
         let mut empty_count = 0;
@@ -72,12 +84,25 @@ impl<const SIZE: usize, P1: Player, P2: Player> Session<SIZE, P1, P2> {
             valid.push(Field::Wealth);
             valid.push(Field::Knowledge);
         }
-        if birth_count == 1 && gift_count == 1 && empty_count == 5 && knowledge_count == 1
-            || wealth_count == 1
-        {
-            valid.push(Field::Joy);
+        let player_symbol = self.next_player_symbol();
+        if birth_count == 1 && gift_count == 1 && empty_count == 5
+            && (knowledge_count == 1 && player_symbol == Field::Knowledge 
+                || wealth_count == 1 && player_symbol == Field::Wealth) {
+                valid.push(Field::Joy);
         }
         return valid;
+    }
+
+    pub fn best_symbol_at(&self, position: &Position) -> Field {
+        match self.valid_symbols_at(position).iter().max() {
+            Some(Field::Knowledge) | Some(Field::Wealth) => self.next_player_symbol(),
+            Some(&f) => f,
+            None => Field::Empty,
+        }
+    }
+
+    fn next_player_symbol(&self) -> Field {
+        if self.next_player == 1 { PLAYER1_SYMBOL } else { PLAYER2_SYMBOL }
     }
 
     fn is_valid_move(&self, move_to_check: &Move) -> bool {

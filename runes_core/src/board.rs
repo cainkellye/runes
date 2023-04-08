@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 #[derive(Clone, Copy)]
 pub struct Board<const SIZE: usize> {
@@ -7,7 +7,7 @@ pub struct Board<const SIZE: usize> {
 
 pub struct Position(pub usize, pub usize);
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 #[repr(u8)]
 pub enum Field {
     Empty = 0,
@@ -45,7 +45,7 @@ impl<const SIZE: usize> Board<SIZE> {
     }
 
     pub fn is_empty(&self, pos: &Position) -> bool {
-        matches!(self.fields[pos.0][pos.1], Field::Empty)
+        self.fields[pos.0][pos.1] == Field::Empty
     }
 }
 
@@ -58,9 +58,8 @@ impl<const SIZE: usize> Debug for Board<SIZE> {
     }
 }
 
-impl Debug for Field {
+impl Display for Field {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        //write!(f, "{}", *self as u8)
         write!(
             f,
             "{}",
@@ -71,6 +70,22 @@ impl Debug for Field {
                 Field::Wealth => "ᚠ",
                 Field::Knowledge => "<",
                 Field::Joy => "ᚹ",
+            }
+        )
+    }
+}
+
+impl Debug for Field {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        //write!(f, "{}", *self as u8)
+        write!(f, "{}",
+            match self {
+                Field::Empty => " ",
+                Field::Birth => "B",
+                Field::Gift => "X",
+                Field::Wealth => "W",
+                Field::Knowledge => "K",
+                Field::Joy => "J",
             }
         )
     }
