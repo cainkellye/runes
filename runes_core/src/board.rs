@@ -32,9 +32,12 @@ impl<const SIZE: usize> Board<SIZE> {
     }
 
     pub fn fields_around(&self, pos: Position) -> Vec<Field> {
-        let mut around = Vec::new();
-        for x in (pos.0 - 1).max(0)..=(pos.0 + 1).min(SIZE) {
-            for y in (pos.1 - 1).max(0)..=(pos.1 + 1).min(SIZE) {
+        let mut around = Vec::with_capacity(8);
+        for x in pos.0.max(1) - 1..=pos.0.min(SIZE - 2) + 1 {
+            for y in pos.1.max(1) - 1..=pos.1.min(SIZE - 2) + 1 {
+                if x == pos.0 && y == pos.1 {
+                    continue;
+                }
                 around.push(self.fields[x][y]);
             }
         }
@@ -53,13 +56,18 @@ impl<const SIZE: usize> Debug for Board<SIZE> {
 
 impl Debug for Field {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Field::Empty => " ",
-            Field::Birth => "ᛒ",
-            Field::Gift => "X",
-            Field::Wealth => "ᚠ",
-            Field::Knowledge => "<",
-            Field::Joy => "ᚹ",
-        })
+        //write!(f, "{}", *self as u8)
+        write!(
+            f,
+            "{}",
+            match self {
+                Field::Empty => " ",
+                Field::Birth => "ᛒ",
+                Field::Gift => "X",
+                Field::Wealth => "ᚠ",
+                Field::Knowledge => "<",
+                Field::Joy => "ᚹ",
+            }
+        )
     }
 }

@@ -1,5 +1,5 @@
-pub mod session;
 pub mod board;
+pub mod session;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
