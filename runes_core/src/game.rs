@@ -3,8 +3,8 @@ use crate::board::{Board, Field, Position};
 const PLAYER1_SYMBOL: Field = Field::Wealth;
 const PLAYER2_SYMBOL: Field = Field::Knowledge;
 
-pub struct Game<const SIZE: usize, P1: Player, P2: Player> {
-    pub board: Board<SIZE>,
+pub struct Game< P1: Player, P2: Player> {
+    pub board: Board,
     pub player1: P1,
     pub player2: P2,
     pub game_over: bool,
@@ -22,17 +22,24 @@ impl Move {
     }
 }
 
-pub trait Player {
-    fn set_symbol(&mut self, symbol: Field);
-    fn make_move<const SIZE: usize>(&self, board: &Board<SIZE>) -> Move;
+pub trait GameRules {
+    fn valid_symbols_at(&self, position: &Position) -> Vec<Field>;
+    fn best_symbol_at(&self, position: &Position) -> Field;
+    fn get_board(&self) -> &Board;
 }
 
-impl<const SIZE: usize, P1: Player, P2: Player> Game<SIZE, P1, P2> {
-    pub fn new(mut player1: P1, mut player2: P2) -> Self {
+pub trait Player {
+    fn set_symbol(&mut self, symbol: Field);
+    fn make_move(&self, board: &impl GameRules) -> Move;
+}
+
+impl< P1: Player, P2: Player> Game<P1, P2> {
+    pub fn new(mut player1: P1, mut player2: P2, board_size: usize) -> Self {
         player1.set_symbol(PLAYER1_SYMBOL);
         player2.set_symbol(PLAYER2_SYMBOL);
         Self {
-            board: Board::<SIZE>::new().change(Position(SIZE / 2, SIZE / 2), Field::Birth),
+            board: Board::new(board_size)
+                .change(Position(board_size / 2, board_size / 2), Field::Birth),
             player1,
             player2,
             game_over: false,
@@ -43,9 +50,9 @@ impl<const SIZE: usize, P1: Player, P2: Player> Game<SIZE, P1, P2> {
     pub fn start_loop(&mut self) {
         while !self.game_over {
             let player_move = if self.next_player == 1 {
-                self.player1.make_move(&self.board)
+                self.player1.make_move(self as &Self)
             } else {
-                self.player2.make_move(&self.board)
+                self.player2.make_move(self as &Self)
             };
             match self.apply_move(player_move) {
                 Ok(symbol) => {
@@ -61,7 +68,7 @@ impl<const SIZE: usize, P1: Player, P2: Player> Game<SIZE, P1, P2> {
     }
 
     pub fn reset(&mut self) {
-        self.board = Board::<SIZE>::new().change(Position(SIZE / 2, SIZE / 2), Field::Birth);
+        self.board.reset();
         self.game_over = false;
         self.next_player = 1;
     }
@@ -76,7 +83,27 @@ impl<const SIZE: usize, P1: Player, P2: Player> Game<SIZE, P1, P2> {
         return Ok(move_to_apply.symbol);
     }
 
-    pub fn valid_symbols_at(&self, position: &Position) -> Vec<Field> {
+    fn next_player_symbol(&self) -> Field {
+        if self.next_player == 1 {
+            PLAYER1_SYMBOL
+        } else {
+            PLAYER2_SYMBOL
+        }
+    }
+
+    fn is_valid_move(&self, move_to_check: &Move) -> bool {
+        let pos = &move_to_check.position;
+        //boundary check
+        pos.0 < self.board.size && pos.1 < self.board.size
+        //target is empty
+            && self.board.is_empty(pos)
+        //symbol is valid
+            && self.valid_symbols_at(pos).contains(&move_to_check.symbol)
+    }
+}
+
+impl< P1: Player, P2: Player> GameRules for Game<P1, P2> {
+    fn valid_symbols_at(&self, position: &Position) -> Vec<Field> {
         if !self.board.is_empty(position) {
             return vec![];
         }
@@ -121,7 +148,7 @@ impl<const SIZE: usize, P1: Player, P2: Player> Game<SIZE, P1, P2> {
         return valid;
     }
 
-    pub fn best_symbol_at(&self, position: &Position) -> Field {
+    fn best_symbol_at(&self, position: &Position) -> Field {
         match self.valid_symbols_at(position).iter().max() {
             Some(Field::Knowledge) | Some(Field::Wealth) => self.next_player_symbol(),
             Some(&f) => f,
@@ -129,21 +156,7 @@ impl<const SIZE: usize, P1: Player, P2: Player> Game<SIZE, P1, P2> {
         }
     }
 
-    fn next_player_symbol(&self) -> Field {
-        if self.next_player == 1 {
-            PLAYER1_SYMBOL
-        } else {
-            PLAYER2_SYMBOL
-        }
-    }
-
-    fn is_valid_move(&self, move_to_check: &Move) -> bool {
-        let pos = &move_to_check.position;
-        //boundary check
-        pos.0 < SIZE && pos.1 < SIZE
-        //target is empty
-            && self.board.is_empty(pos)
-        //symbol is valid
-            && self.valid_symbols_at(pos).contains(&move_to_check.symbol)
+    fn get_board(&self) -> &Board {
+        return &self.board;
     }
 }

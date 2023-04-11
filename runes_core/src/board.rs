@@ -1,8 +1,9 @@
 use std::fmt::{Debug, Display};
 
-#[derive(Clone, Copy)]
-pub struct Board<const SIZE: usize> {
-    fields: [[Field; SIZE]; SIZE],
+#[derive(Clone)]
+pub struct Board {
+    fields: Vec<Vec<Field>>,
+    pub size: usize,
 }
 
 pub struct Position(pub usize, pub usize);
@@ -18,10 +19,11 @@ pub enum Field {
     Joy = 5,
 }
 
-impl<const SIZE: usize> Board<SIZE> {
-    pub fn new() -> Self {
+impl Board {
+    pub fn new(size: usize) -> Self {
         Board {
-            fields: [[Field::Empty; SIZE]; SIZE],
+            fields: vec![vec![Field::Empty; size]; size],
+            size,
         }
     }
 
@@ -33,8 +35,8 @@ impl<const SIZE: usize> Board<SIZE> {
 
     pub fn fields_around(&self, pos: &Position) -> Vec<Field> {
         let mut around = Vec::with_capacity(8);
-        for x in pos.0.max(1) - 1..=pos.0.min(SIZE - 2) + 1 {
-            for y in pos.1.max(1) - 1..=pos.1.min(SIZE - 2) + 1 {
+        for x in pos.0.max(1) - 1..=pos.0.min(self.size - 2) + 1 {
+            for y in pos.1.max(1) - 1..=pos.1.min(self.size - 2) + 1 {
                 if x == pos.0 && y == pos.1 {
                     continue;
                 }
@@ -47,11 +49,15 @@ impl<const SIZE: usize> Board<SIZE> {
     pub fn is_empty(&self, pos: &Position) -> bool {
         self.fields[pos.0][pos.1] == Field::Empty
     }
+
+    pub fn reset(&mut self) {
+        self.fields = vec![vec![Field::Empty; self.size]; self.size];
+    }
 }
 
-impl<const SIZE: usize> Debug for Board<SIZE> {
+impl Debug for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for row in self.fields {
+        for row in &self.fields {
             writeln!(f, "{:?}", row)?;
         }
         Ok(())

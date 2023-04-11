@@ -1,4 +1,4 @@
-use crate::{game::{Move, Player}, board::Field};
+use crate::{game::{Move, Player, GameRules}, board::Field};
 
 pub struct HumanPlayer {
     pub name: String,
@@ -13,7 +13,7 @@ impl HumanPlayer {
 }
 
 impl Player for HumanPlayer {
-    fn make_move<const SIZE: usize>(&self, _: &crate::board::Board<SIZE>) -> Move {
+    fn make_move(&self, _: &impl GameRules) -> Move {
         (self.make_move_callback)(&self)
     }
 

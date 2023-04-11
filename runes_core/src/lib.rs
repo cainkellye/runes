@@ -1,5 +1,6 @@
 pub mod board;
 pub mod human_player;
+pub mod ai_player;
 pub mod game;
 
 #[cfg(test)]
@@ -8,7 +9,7 @@ mod tests {
 
     #[test]
     fn board() {
-        let b: Board<5> = Board::new()
+        let b = Board::new(5)
             .change(Position(2, 2), Field::Birth)
             .change(Position(1, 3), Field::Gift)
             .change(Position(3, 1), Field::Gift)
