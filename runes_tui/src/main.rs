@@ -1,5 +1,5 @@
 use runes_core::{
-    board::{Field, Position},
+    board::{Field, Position, Board},
     human_player::HumanPlayer,
     game::{Move, Game, GameRules},
 };
@@ -27,6 +27,12 @@ fn main() {
     my_game.next_player = 2;
     let best = my_game.best_symbol_at(&Position(7, 5));
     println!("Best2 (7,5): {:?}", best);
+
+    println!("Board clone");
+    let b1 = Board::new(5);
+    let b2 = b1.change(Position(2, 3), Field::Joy);
+    println!("{:?}", b1);
+    println!("{:?}", b2);
 }
 
 fn make_move(player: &HumanPlayer) -> Move {

@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 #[derive(Clone)]
 pub struct Board {
-    fields: Vec<Vec<Field>>,
+    fields: Vec<Field>,
     pub size: usize,
 }
 
@@ -22,14 +22,14 @@ pub enum Field {
 impl Board {
     pub fn new(size: usize) -> Self {
         Board {
-            fields: vec![vec![Field::Empty; size]; size],
+            fields: vec![Field::Empty; size * size],
             size,
         }
     }
 
     pub fn change(&self, pos: Position, symbol: Field) -> Self {
         let mut new = self.clone();
-        new.fields[pos.0][pos.1] = symbol;
+        new.fields[pos.0 * self.size + pos.1] = symbol;
         return new;
     }
 
@@ -40,25 +40,32 @@ impl Board {
                 if x == pos.0 && y == pos.1 {
                     continue;
                 }
-                around.push(self.fields[x][y]);
+                around.push(self.fields[x*self.size + y]);
             }
         }
         return around;
     }
 
     pub fn is_empty(&self, pos: &Position) -> bool {
-        self.fields[pos.0][pos.1] == Field::Empty
+        self.fields[pos.0 * self.size + pos.1] == Field::Empty
     }
 
     pub fn reset(&mut self) {
-        self.fields = vec![vec![Field::Empty; self.size]; self.size];
+        self.fields = vec![Field::Empty; self.size * self.size];
     }
 }
 
 impl Debug for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for row in &self.fields {
-            writeln!(f, "{:?}", row)?;
+        for i in 0..self.size {
+            write!(f, "[")?;
+            for j in 0..self.size {
+                write!(f, "{:?}", self.fields[i * self.size + j])?;
+                if j<self.size-1 {
+                    write!(f, ", ")?;
+                }
+            }
+            writeln!(f, "]")?;
         }
         Ok(())
     }
