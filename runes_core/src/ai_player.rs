@@ -1,13 +1,18 @@
-use std::{marker::PhantomData, cell::RefCell, rc::Rc};
-use minimax::{Strategy, Negamax};
+use minimax::{Negamax, Strategy};
+use std::{cell::RefCell, marker::PhantomData, rc::Rc};
 
-use crate::{game::{Move, Player, Game}, board::{Field, Position}};
+use crate::{
+    board::{Field, Position},
+    game::{Game, Move, Player},
+};
 
+#[repr(u8)]
+#[derive(Copy, Clone)]
 pub enum Level {
-    Easy,
-    Medium,
-    Hard,
-    VeryHard,
+    Easy = 1,
+    Medium = 2,
+    Hard = 3,
+    VeryHard = 4,
 }
 
 pub struct AiPlayer<'a> {
@@ -18,8 +23,10 @@ pub struct AiPlayer<'a> {
 
 impl<'a> AiPlayer<'a> {
     pub fn new(level: Level) -> Self {
-        AiPlayer { symbol: Field::Empty, level, 
-            strategy: Rc::new(RefCell::new(minimax::strategies::negamax::Negamax::new(Eval::default(), 2))) 
+        AiPlayer {
+            symbol: Field::Empty,
+            level,
+            strategy: Rc::new(RefCell::new(Negamax::new(Eval::default(), level as u8))),
         }
     }
 }
@@ -68,21 +75,18 @@ impl<'a> minimax::Evaluator for Eval<'a> {
     type G = Game<'a>;
 
     fn evaluate(&self, s: &<Self::G as minimax::Game>::S) -> minimax::Evaluation {
-        let positions = (0..s.board.size).flat_map(|i| (0..s.board.size).map(move |j| Position(i,j)));
-        let mut score = 0;
+        let positions =
+            (0..s.board.size).flat_map(|i| (0..s.board.size).map(move |j| Position(i, j)));
+        let mut score = 10;
         let next_player_symbol = s.next_player_symbol();
         for pos in positions {
-            if s.board.is_joy(&pos) {
-                let around = s.board.fields_around(&pos);
-                return if around.contains(&Field::Wealth) { 1000 } else { -1000 };
-            }
             let around = s.board.fields_around(&pos);
             let mut empty_count = 0;
             let mut birth_count = 0;
             let mut gift_count = 0;
             let mut wealth_count = 0;
             let mut knowledge_count = 0;
-    
+
             for field in &around {
                 match field {
                     Field::Empty => empty_count += 1,
@@ -96,12 +100,16 @@ impl<'a> minimax::Evaluator for Eval<'a> {
 
             if birth_count == 1 && gift_count == 1 && empty_count == 5 {
                 if wealth_count == 1 {
-                    score += if next_player_symbol == Field::Wealth { 100 } else { 10 };
+                    score *= 10;
                 } else if knowledge_count == 1 {
-                    score -= if next_player_symbol == Field::Knowledge { 100 } else { 10 };
+                    score /= 10;
                 }
             }
         }
-        score as minimax::Evaluation
+        (if next_player_symbol == Field::Wealth {
+            score
+        } else {
+            -score
+        }) as minimax::Evaluation
     }
 }

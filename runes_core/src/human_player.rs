@@ -1,4 +1,7 @@
-use crate::{game::{Move, Player, Game}, board::Field};
+use crate::{
+    board::Field,
+    game::{Game, Move, Player},
+};
 
 pub struct HumanPlayer {
     pub name: String,
@@ -8,7 +11,11 @@ pub struct HumanPlayer {
 
 impl HumanPlayer {
     pub fn new(name: String, make_move_callback: fn(player: &HumanPlayer) -> Move) -> Self {
-        HumanPlayer { name, make_move_callback, symbol: Field::Empty }
+        HumanPlayer {
+            name,
+            make_move_callback,
+            symbol: Field::Empty,
+        }
     }
 }
 

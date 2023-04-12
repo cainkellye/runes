@@ -1,4 +1,4 @@
-use crate::{board::{Board, Field, Position}};
+use crate::board::{Board, Field, Position};
 
 const PLAYER1_SYMBOL: Field = Field::Wealth;
 const PLAYER2_SYMBOL: Field = Field::Knowledge;
@@ -25,9 +25,9 @@ impl Move {
     }
 }
 
-pub trait Player<'g> {
+pub trait Player<'a> {
     fn set_symbol(&mut self, symbol: Field);
-    fn make_move(&self, board: &Game<'g>) -> Move;
+    fn make_move(&self, board: &Game<'a>) -> Move;
 }
 
 impl<'a> PartialEq for &'a dyn Player<'a> {
@@ -37,7 +37,11 @@ impl<'a> PartialEq for &'a dyn Player<'a> {
 }
 
 impl<'a> Game<'a> {
-    pub fn new(player1: &'a mut dyn Player<'a>, player2: &'a mut dyn Player<'a>, board_size: usize) -> Self {
+    pub fn new(
+        player1: &'a mut dyn Player<'a>,
+        player2: &'a mut dyn Player<'a>,
+        board_size: usize,
+    ) -> Self {
         player1.set_symbol(PLAYER1_SYMBOL);
         player2.set_symbol(PLAYER2_SYMBOL);
         let mut board = Board::new(board_size);
@@ -57,12 +61,7 @@ impl<'a> Game<'a> {
             callback(&self);
             let player_move = self.next_player.make_move(&self);
             match self.apply_move(player_move) {
-                Ok(symbol) => {
-                    if symbol == Field::Joy {
-                        self.game_over = true;
-                        break;
-                    }
-                },
+                Ok(_) => (),
                 Err(s) => println!("{}", s),
             }
         }
@@ -75,12 +74,20 @@ impl<'a> Game<'a> {
     }
 
     pub fn apply_move(&mut self, move_to_apply: Move) -> Result<Field, String> {
-        if !self.is_valid_move(&move_to_apply) {
-            return Err("Invalid move".to_string());
-        }
-        self.board.change(move_to_apply.position, move_to_apply.symbol);
+        // if !self.is_valid_move(&move_to_apply) {
+        //     return Err("Invalid move".to_string());
+        // }
+        self.board
+            .change(move_to_apply.position, move_to_apply.symbol);
         self.last_move = Some(move_to_apply);
-        self.next_player = if self.next_player == self.player1 {self.player2} else {self.player1};
+        if move_to_apply.symbol == Field::Joy || self.board.is_full() {
+            self.game_over = true;
+        }
+        self.next_player = if self.next_player == self.player1 {
+            self.player2
+        } else {
+            self.player1
+        };
         return Ok(move_to_apply.symbol);
     }
 
@@ -93,8 +100,14 @@ impl<'a> Game<'a> {
     }
 
     pub fn winner(&self) -> Option<String> {
-        if !self.game_over { return None; }
-        if let Some(Move { position: pos, symbol: Field::Joy }) = self.last_move {
+        if !self.game_over {
+            return None;
+        }
+        if let Some(Move {
+            position: pos,
+            symbol: Field::Joy,
+        }) = self.last_move
+        {
             if self.board.fields_around(&pos).contains(&Field::Wealth) {
                 return Some("Player1".to_string());
             } else {
@@ -137,7 +150,7 @@ impl<'a> Game<'a> {
                 Field::Joy => (),
             }
         }
-        
+
         let mut valid = Vec::new();
         if empty_count == around.len() {
             valid.push(Field::Birth);
@@ -170,7 +183,7 @@ impl<'a> Game<'a> {
         let mut moves = Vec::new();
         for i in 0..self.board.size {
             for j in 0..self.board.size {
-                let pos = Position(i,j);
+                let pos = Position(i, j);
                 if self.board.is_empty(&pos) {
                     moves.push(Move::new(pos, self.best_symbol_at(&pos)));
                 }

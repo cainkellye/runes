@@ -1,13 +1,14 @@
-pub mod board;
-pub mod human_player;
 pub mod ai_player;
+pub mod board;
 pub mod game;
+pub mod human_player;
 
 #[cfg(test)]
 mod tests {
-    use crate::board::{Position, Field, Board};
+    use crate::board::{Board, Field, Position};
 
     #[test]
+    #[rustfmt::skip]
     fn board() {
         let mut b = Board::new(5);
         b.change(Position(2, 2), Field::Birth);
@@ -22,8 +23,17 @@ mod tests {
 [ , X, K,  ,  ]
 [ ,  ,  ,  ,  ]");
 
-        assert_eq!(format!("{:?}", b.fields_around(&Position(1, 2))).trim_end(), "[ ,  ,  ,  , X,  , B, W]");
-        assert_eq!(format!("{:?}", b.fields_around(&Position(4, 0))).trim_end(), "[ , X,  ]");
-        assert_eq!(format!("{:?}", b.fields_around(&Position(1, 4))).trim_end(), "[ ,  , X, W,  ]");
+        assert_eq!(
+            format!("{:?}", b.fields_around(&Position(1, 2))).trim_end(),
+            "[ ,  ,  ,  , X,  , B, W]"
+        );
+        assert_eq!(
+            format!("{:?}", b.fields_around(&Position(4, 0))).trim_end(),
+            "[ , X,  ]"
+        );
+        assert_eq!(
+            format!("{:?}", b.fields_around(&Position(1, 4))).trim_end(),
+            "[ ,  , X, W,  ]"
+        );
     }
 }

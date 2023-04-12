@@ -39,7 +39,7 @@ impl Board {
                 if x == pos.0 && y == pos.1 {
                     continue;
                 }
-                around.push(self.fields[x*self.size + y]);
+                around.push(self.fields[x * self.size + y]);
             }
         }
         return around;
@@ -56,6 +56,10 @@ impl Board {
     pub fn reset(&mut self) {
         self.fields = vec![Field::Empty; self.size * self.size];
     }
+
+    pub fn is_full(&self) -> bool {
+        self.fields.iter().all(|&f| f != Field::Empty)
+    }
 }
 
 impl Debug for Board {
@@ -64,7 +68,7 @@ impl Debug for Board {
             write!(f, "[")?;
             for j in 0..self.size {
                 write!(f, "{:?}", self.fields[i * self.size + j])?;
-                if j<self.size-1 {
+                if j < self.size - 1 {
                     write!(f, ", ")?;
                 }
             }
@@ -76,16 +80,17 @@ impl Debug for Board {
 
 impl Display for Field {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use colorize::AnsiColor;
         write!(
             f,
             "{}",
             match self {
-                Field::Empty => " ",
-                Field::Birth => "ᛒ",
-                Field::Gift => "X",
-                Field::Wealth => "ᚠ",
-                Field::Knowledge => "<",
-                Field::Joy => "ᚹ",
+                Field::Empty => " ".to_string(),
+                Field::Birth => "ᛒ".to_string(),
+                Field::Gift => "X".b_green(),
+                Field::Wealth => "ᚠ".yellow(),
+                Field::Knowledge => "<".blue(),
+                Field::Joy => "ᚹ".red(),
             }
         )
     }
@@ -93,15 +98,18 @@ impl Display for Field {
 
 impl Debug for Field {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use colorize::AnsiColor;
         //write!(f, "{}", *self as u8)
-        write!(f, "{}",
+        write!(
+            f,
+            "{}",
             match self {
-                Field::Empty => " ",
-                Field::Birth => "B",
-                Field::Gift => "X",
-                Field::Wealth => "W",
-                Field::Knowledge => "K",
-                Field::Joy => "J",
+                Field::Empty => " ".to_string(),
+                Field::Birth => "B".to_string(),
+                Field::Gift => "X".b_green(),
+                Field::Wealth => "W".yellow(),
+                Field::Knowledge => "K".blue(),
+                Field::Joy => "J".red(),
             }
         )
     }
