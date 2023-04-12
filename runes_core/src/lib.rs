@@ -9,12 +9,12 @@ mod tests {
 
     #[test]
     fn board() {
-        let b = Board::new(5)
-            .change(Position(2, 2), Field::Birth)
-            .change(Position(1, 3), Field::Gift)
-            .change(Position(3, 1), Field::Gift)
-            .change(Position(3, 2), Field::Knowledge)
-            .change(Position(2, 3), Field::Wealth);
+        let mut b = Board::new(5);
+        b.change(Position(2, 2), Field::Birth);
+        b.change(Position(1, 3), Field::Gift);
+        b.change(Position(3, 1), Field::Gift);
+        b.change(Position(3, 2), Field::Knowledge);
+        b.change(Position(2, 3), Field::Wealth);
         assert_eq!(format!("{:?}", b).trim_end(), 
 "[ ,  ,  ,  ,  ]
 [ ,  ,  , X,  ]

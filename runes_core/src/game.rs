@@ -3,17 +3,19 @@ use crate::board::{Board, Field, Position};
 const PLAYER1_SYMBOL: Field = Field::Wealth;
 const PLAYER2_SYMBOL: Field = Field::Knowledge;
 
+#[derive(Clone)]
 pub struct Game<'a> {
     pub board: Board,
     pub player1: &'a dyn Player,
     pub player2: &'a dyn Player,
     pub game_over: bool,
-    pub next_player: u8,
+    pub next_player: &'a dyn Player,
 }
 
+#[derive(Clone, Copy)]
 pub struct Move {
-    position: Position,
-    symbol: Field,
+    pub position: Position,
+    pub symbol: Field,
 }
 
 impl Move {
@@ -27,34 +29,37 @@ pub trait Player {
     fn make_move(&self, board: &Game) -> Move;
 }
 
+impl<'a> PartialEq for &'a dyn Player {
+    fn eq(&self, other: &Self) -> bool {
+        self as *const _ == other as *const _
+    }
+}
+
 impl<'a> Game<'a> {
     pub fn new(player1: &'a mut dyn Player, player2: &'a mut dyn Player, board_size: usize) -> Self {
         player1.set_symbol(PLAYER1_SYMBOL);
         player2.set_symbol(PLAYER2_SYMBOL);
+        let mut board = Board::new(board_size);
+        board.change(Position(board_size / 2, board_size / 2), Field::Birth);
         Self {
-            board: Board::new(board_size)
-                .change(Position(board_size / 2, board_size / 2), Field::Birth),
+            board,
             player1,
             player2,
             game_over: false,
-            next_player: 1,
+            next_player: player1,
         }
     }
 
     pub fn start_loop(&mut self) {
         while !self.game_over {
-            let player_move = if self.next_player == 1 {
-                self.player1.make_move(self as &Self)
-            } else {
-                self.player2.make_move(self as &Self)
-            };
+            let player_move = self.next_player.make_move(&self);
             match self.apply_move(player_move) {
                 Ok(symbol) => {
                     if symbol == Field::Joy {
                         self.game_over = true;
                         break;
                     }
-                    self.next_player = 3 - self.next_player;
+                    self.next_player = if self.next_player == self.player1 {self.player2} else {self.player1};
                 },
                 Err(s) => println!("{}", s),
             }
@@ -64,21 +69,19 @@ impl<'a> Game<'a> {
     pub fn reset(&mut self) {
         self.board.reset();
         self.game_over = false;
-        self.next_player = 1;
+        self.next_player = self.player1;
     }
 
     pub fn apply_move(&mut self, move_to_apply: Move) -> Result<Field, String> {
         if !self.is_valid_move(&move_to_apply) {
             return Err("Invalid move".to_string());
         }
-        self.board = self
-            .board
-            .change(move_to_apply.position, move_to_apply.symbol);
+        self.board.change(move_to_apply.position, move_to_apply.symbol);
         return Ok(move_to_apply.symbol);
     }
 
     fn next_player_symbol(&self) -> Field {
-        if self.next_player == 1 {
+        if self.next_player == self.player1 {
             PLAYER1_SYMBOL
         } else {
             PLAYER2_SYMBOL
@@ -146,5 +149,18 @@ impl<'a> Game<'a> {
             Some(&f) => f,
             None => Field::Empty,
         }
+    }
+
+    pub fn generate_moves(&self) -> Vec<Move> {
+        let mut moves = Vec::new();
+        for i in 0..self.board.size {
+            for j in 0..self.board.size {
+                let pos = Position(i,j);
+                if self.board.is_empty(&pos) {
+                    moves.push(Move::new(pos, self.best_symbol_at(&pos)));
+                }
+            }
+        }
+        return moves;
     }
 }

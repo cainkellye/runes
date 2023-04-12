@@ -6,6 +6,7 @@ pub struct Board {
     pub size: usize,
 }
 
+#[derive(Clone, Copy)]
 pub struct Position(pub usize, pub usize);
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
@@ -27,10 +28,8 @@ impl Board {
         }
     }
 
-    pub fn change(&self, pos: Position, symbol: Field) -> Self {
-        let mut new = self.clone();
-        new.fields[pos.0 * self.size + pos.1] = symbol;
-        return new;
+    pub fn change(&mut self, pos: Position, symbol: Field) {
+        self.fields[pos.0 * self.size + pos.1] = symbol;
     }
 
     pub fn fields_around(&self, pos: &Position) -> Vec<Field> {
