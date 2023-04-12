@@ -1,4 +1,4 @@
-use crate::board::{Board, Field, Position};
+use crate::{board::{Board, Field, Position}};
 
 const PLAYER1_SYMBOL: Field = Field::Wealth;
 const PLAYER2_SYMBOL: Field = Field::Knowledge;
@@ -31,7 +31,7 @@ pub trait Player {
 
 impl<'a> PartialEq for &'a dyn Player {
     fn eq(&self, other: &Self) -> bool {
-        self as *const _ == other as *const _
+        *self as *const _ == *other as *const _
     }
 }
 
@@ -59,7 +59,6 @@ impl<'a> Game<'a> {
                         self.game_over = true;
                         break;
                     }
-                    self.next_player = if self.next_player == self.player1 {self.player2} else {self.player1};
                 },
                 Err(s) => println!("{}", s),
             }
@@ -77,6 +76,7 @@ impl<'a> Game<'a> {
             return Err("Invalid move".to_string());
         }
         self.board.change(move_to_apply.position, move_to_apply.symbol);
+        self.next_player = if self.next_player == self.player1 {self.player2} else {self.player1};
         return Ok(move_to_apply.symbol);
     }
 
@@ -120,18 +120,17 @@ impl<'a> Game<'a> {
                 Field::Joy => (),
             }
         }
-
+        
         let mut valid = Vec::new();
         if empty_count == around.len() {
             valid.push(Field::Birth);
         } else {
             valid.push(Field::Gift);
         }
-        if birth_count > 0 && gift_count > 0 {
-            valid.push(Field::Wealth);
-            valid.push(Field::Knowledge);
-        }
         let player_symbol = self.next_player_symbol();
+        if birth_count > 0 && gift_count > 0 {
+            valid.push(player_symbol);
+        }
         if birth_count == 1
             && gift_count == 1
             && empty_count == 5
@@ -145,7 +144,6 @@ impl<'a> Game<'a> {
 
     pub fn best_symbol_at(&self, position: &Position) -> Field {
         match self.valid_symbols_at(position).iter().max() {
-            Some(Field::Knowledge) | Some(Field::Wealth) => self.next_player_symbol(),
             Some(&f) => f,
             None => Field::Empty,
         }
