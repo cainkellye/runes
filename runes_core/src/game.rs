@@ -6,10 +6,10 @@ const PLAYER2_SYMBOL: Field = Field::Knowledge;
 #[derive(Clone)]
 pub struct Game<'a> {
     pub board: Board,
-    pub player1: &'a dyn Player,
-    pub player2: &'a dyn Player,
+    pub player1: &'a dyn Player<'a>,
+    pub player2: &'a dyn Player<'a>,
     pub game_over: bool,
-    pub next_player: &'a dyn Player,
+    pub next_player: &'a dyn Player<'a>,
     last_move: Option<Move>,
 }
 
@@ -25,19 +25,19 @@ impl Move {
     }
 }
 
-pub trait Player {
+pub trait Player<'g> {
     fn set_symbol(&mut self, symbol: Field);
-    fn make_move(&self, board: &Game) -> Move;
+    fn make_move(&self, board: &Game<'g>) -> Move;
 }
 
-impl<'a> PartialEq for &'a dyn Player {
+impl<'a> PartialEq for &'a dyn Player<'a> {
     fn eq(&self, other: &Self) -> bool {
         *self as *const _ == *other as *const _
     }
 }
 
 impl<'a> Game<'a> {
-    pub fn new(player1: &'a mut dyn Player, player2: &'a mut dyn Player, board_size: usize) -> Self {
+    pub fn new(player1: &'a mut dyn Player<'a>, player2: &'a mut dyn Player<'a>, board_size: usize) -> Self {
         player1.set_symbol(PLAYER1_SYMBOL);
         player2.set_symbol(PLAYER2_SYMBOL);
         let mut board = Board::new(board_size);

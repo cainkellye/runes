@@ -1,5 +1,5 @@
-use std::marker::PhantomData;
-use minimax::Strategy;
+use std::{marker::PhantomData, cell::RefCell, rc::Rc};
+use minimax::{Strategy, Negamax};
 
 use crate::{game::{Move, Player, Game}, board::{Field, Position}};
 
@@ -10,25 +10,28 @@ pub enum Level {
     VeryHard,
 }
 
-pub struct AiPlayer {
+pub struct AiPlayer<'a> {
     pub symbol: Field,
     pub level: Level,
+    strategy: Rc<RefCell<Negamax<Eval<'a>>>>,
 }
 
-impl AiPlayer {
+impl<'a> AiPlayer<'a> {
     pub fn new(level: Level) -> Self {
-        AiPlayer { symbol: Field::Empty, level }
+        AiPlayer { symbol: Field::Empty, level, 
+            strategy: Rc::new(RefCell::new(minimax::strategies::negamax::Negamax::new(Eval::default(), 2))) 
+        }
     }
 }
 
-impl Player for AiPlayer {
+impl<'a> Player<'a> for AiPlayer<'a> {
     fn set_symbol(&mut self, symbol: Field) {
         self.symbol = symbol;
     }
 
-    fn make_move<'a>(&self, game: &Game<'a>) -> Move {
-        let mut strat = minimax::strategies::negamax::Negamax::new(Eval::default(), 1);
-        let ai_move = strat.choose_move(game);
+    fn make_move(&self, game: &Game<'a>) -> Move {
+        let mut strategy = self.strategy.borrow_mut();
+        let ai_move = strategy.choose_move(game);
         return ai_move.unwrap();
     }
 }
@@ -93,9 +96,9 @@ impl<'a> minimax::Evaluator for Eval<'a> {
 
             if birth_count == 1 && gift_count == 1 && empty_count == 5 {
                 if wealth_count == 1 {
-                    score += if next_player_symbol == Field::Wealth { 100 } else { 1 };
+                    score += if next_player_symbol == Field::Wealth { 100 } else { 10 };
                 } else if knowledge_count == 1 {
-                    score -= if next_player_symbol == Field::Knowledge { 100 } else { 1 };
+                    score -= if next_player_symbol == Field::Knowledge { 100 } else { 10 };
                 }
             }
         }
