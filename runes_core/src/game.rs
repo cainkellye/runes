@@ -3,10 +3,10 @@ use crate::board::{Board, Field, Position};
 const PLAYER1_SYMBOL: Field = Field::Wealth;
 const PLAYER2_SYMBOL: Field = Field::Knowledge;
 
-pub struct Game< P1: Player, P2: Player> {
+pub struct Game<'a> {
     pub board: Board,
-    pub player1: P1,
-    pub player2: P2,
+    pub player1: &'a dyn Player,
+    pub player2: &'a dyn Player,
     pub game_over: bool,
     pub next_player: u8,
 }
@@ -22,19 +22,13 @@ impl Move {
     }
 }
 
-pub trait GameRules {
-    fn valid_symbols_at(&self, position: &Position) -> Vec<Field>;
-    fn best_symbol_at(&self, position: &Position) -> Field;
-    fn get_board(&self) -> &Board;
-}
-
 pub trait Player {
     fn set_symbol(&mut self, symbol: Field);
-    fn make_move(&self, board: &impl GameRules) -> Move;
+    fn make_move(&self, board: &Game) -> Move;
 }
 
-impl< P1: Player, P2: Player> Game<P1, P2> {
-    pub fn new(mut player1: P1, mut player2: P2, board_size: usize) -> Self {
+impl<'a> Game<'a> {
+    pub fn new(player1: &'a mut dyn Player, player2: &'a mut dyn Player, board_size: usize) -> Self {
         player1.set_symbol(PLAYER1_SYMBOL);
         player2.set_symbol(PLAYER2_SYMBOL);
         Self {
@@ -100,10 +94,8 @@ impl< P1: Player, P2: Player> Game<P1, P2> {
         //symbol is valid
             && self.valid_symbols_at(pos).contains(&move_to_check.symbol)
     }
-}
 
-impl< P1: Player, P2: Player> GameRules for Game<P1, P2> {
-    fn valid_symbols_at(&self, position: &Position) -> Vec<Field> {
+    pub fn valid_symbols_at(&self, position: &Position) -> Vec<Field> {
         if !self.board.is_empty(position) {
             return vec![];
         }
@@ -148,15 +140,11 @@ impl< P1: Player, P2: Player> GameRules for Game<P1, P2> {
         return valid;
     }
 
-    fn best_symbol_at(&self, position: &Position) -> Field {
+    pub fn best_symbol_at(&self, position: &Position) -> Field {
         match self.valid_symbols_at(position).iter().max() {
             Some(Field::Knowledge) | Some(Field::Wealth) => self.next_player_symbol(),
             Some(&f) => f,
             None => Field::Empty,
         }
-    }
-
-    fn get_board(&self) -> &Board {
-        return &self.board;
     }
 }

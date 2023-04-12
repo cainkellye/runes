@@ -1,14 +1,15 @@
 use runes_core::{
     board::{Field, Position, Board},
     human_player::HumanPlayer,
-    game::{Move, Game, GameRules},
+    game::{Move, Game},
 };
 
 fn main() {
-    let player1 = HumanPlayer::new("Player1".to_string(), make_move);
-    let player2 = HumanPlayer::new("Player2".to_string(), make_move);
+    let mut player1 = HumanPlayer::new("Player1".to_string(), make_move);
+    let mut player2 = HumanPlayer::new("Player2".to_string(), make_move);
 
-    let mut my_game: Game<_, _> = Game::new(player1, player2, 13);
+    let mut my_game: Game = Game::new(&mut player1, &mut player2, 13);
+
     my_game.apply_move(Move::new(Position(7, 6), Field::Gift)).unwrap();
     my_game.apply_move(Move::new(Position(6, 5), Field::Knowledge)).unwrap();
     println!("{:?}", my_game.board);

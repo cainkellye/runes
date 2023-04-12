@@ -1,4 +1,4 @@
-use crate::{game::{Move, Player, GameRules}, board::{Field, Position}};
+use crate::{game::{Move, Player, Game}, board::{Field, Position}};
 
 pub enum Level {
     Easy,
@@ -19,7 +19,7 @@ impl AiPlayer {
 }
 
 impl Player for AiPlayer {
-    fn make_move(&self, game: &impl GameRules) -> Move {
+    fn make_move(&self, game: &Game) -> Move {
         let pos = Position(0,0);
         let best_move = game.best_symbol_at(&pos);
         return Move::new(pos, best_move);
