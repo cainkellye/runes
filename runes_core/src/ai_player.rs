@@ -27,11 +27,9 @@ impl Player for AiPlayer {
     }
 
     fn make_move<'a>(&self, game: &Game<'a>) -> Move {
-        let mut strat = minimax::strategies::negamax::Negamax::new(Eval{ty: PhantomData::default()}, 10);
-        strat.choose_move(game);
-        let pos = Position(0,0);
-        let best_move = game.best_symbol_at(&pos);
-        return Move::new(pos, best_move);
+        let mut strat = minimax::strategies::negamax::Negamax::new(Eval::default(), 1);
+        let ai_move = strat.choose_move(game);
+        return ai_move.unwrap();
     }
 }
 
@@ -59,6 +57,7 @@ impl<'a> minimax::Game for Game<'a> {
         }
     }
 }
+#[derive(Default)]
 struct Eval<'a> {
     ty: PhantomData<&'a ()>,
 }
@@ -67,7 +66,39 @@ impl<'a> minimax::Evaluator for Eval<'a> {
 
     fn evaluate(&self, s: &<Self::G as minimax::Game>::S) -> minimax::Evaluation {
         let positions = (0..s.board.size).flat_map(|i| (0..s.board.size).map(move |j| Position(i,j)));
-        positions.filter(|p| s.best_symbol_at(p) == Field::Joy)
-        .count() as minimax::Evaluation
+        let mut score = 0;
+        let next_player_symbol = s.next_player_symbol();
+        for pos in positions {
+            if s.board.is_joy(&pos) {
+                let around = s.board.fields_around(&pos);
+                return if around.contains(&Field::Wealth) { 1000 } else { -1000 };
+            }
+            let around = s.board.fields_around(&pos);
+            let mut empty_count = 0;
+            let mut birth_count = 0;
+            let mut gift_count = 0;
+            let mut wealth_count = 0;
+            let mut knowledge_count = 0;
+    
+            for field in &around {
+                match field {
+                    Field::Empty => empty_count += 1,
+                    Field::Birth => birth_count += 1,
+                    Field::Gift => gift_count += 1,
+                    Field::Wealth => wealth_count += 1,
+                    Field::Knowledge => knowledge_count += 1,
+                    Field::Joy => (),
+                }
+            }
+
+            if birth_count == 1 && gift_count == 1 && empty_count == 5 {
+                if wealth_count == 1 {
+                    score += if next_player_symbol == Field::Wealth { 100 } else { 1 };
+                } else if knowledge_count == 1 {
+                    score -= if next_player_symbol == Field::Knowledge { 100 } else { 1 };
+                }
+            }
+        }
+        score as minimax::Evaluation
     }
 }

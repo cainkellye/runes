@@ -49,6 +49,10 @@ impl Board {
         self.fields[pos.0 * self.size + pos.1] == Field::Empty
     }
 
+    pub fn is_joy(&self, pos: &Position) -> bool {
+        self.fields[pos.0 * self.size + pos.1] == Field::Joy
+    }
+
     pub fn reset(&mut self) {
         self.fields = vec![Field::Empty; self.size * self.size];
     }

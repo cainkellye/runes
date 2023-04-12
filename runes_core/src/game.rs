@@ -10,6 +10,7 @@ pub struct Game<'a> {
     pub player2: &'a dyn Player,
     pub game_over: bool,
     pub next_player: &'a dyn Player,
+    last_move: Option<Move>,
 }
 
 #[derive(Clone, Copy)]
@@ -47,11 +48,13 @@ impl<'a> Game<'a> {
             player2,
             game_over: false,
             next_player: player1,
+            last_move: None,
         }
     }
 
-    pub fn start_loop(&mut self) {
+    pub fn start_loop(&mut self, callback: fn(&Self)) {
         while !self.game_over {
+            callback(&self);
             let player_move = self.next_player.make_move(&self);
             match self.apply_move(player_move) {
                 Ok(symbol) => {
@@ -76,15 +79,29 @@ impl<'a> Game<'a> {
             return Err("Invalid move".to_string());
         }
         self.board.change(move_to_apply.position, move_to_apply.symbol);
+        self.last_move = Some(move_to_apply);
         self.next_player = if self.next_player == self.player1 {self.player2} else {self.player1};
         return Ok(move_to_apply.symbol);
     }
 
-    fn next_player_symbol(&self) -> Field {
+    pub fn next_player_symbol(&self) -> Field {
         if self.next_player == self.player1 {
             PLAYER1_SYMBOL
         } else {
             PLAYER2_SYMBOL
+        }
+    }
+
+    pub fn winner(&self) -> Option<String> {
+        if !self.game_over { return None; }
+        if let Some(Move { position: pos, symbol: Field::Joy }) = self.last_move {
+            if self.board.fields_around(&pos).contains(&Field::Wealth) {
+                return Some("Player1".to_string());
+            } else {
+                return Some("Player2".to_string());
+            }
+        } else {
+            return None;
         }
     }
 

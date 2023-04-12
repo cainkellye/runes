@@ -1,10 +1,22 @@
 use runes_core::{
     board::{Field, Position},
     human_player::HumanPlayer,
-    game::{Move, Game},
+    game::{Move, Game}, ai_player::AiPlayer,
 };
 
 fn main() {
+    let mut player1 = AiPlayer::new(runes_core::ai_player::Level::Medium);
+    let mut player2 = AiPlayer::new(runes_core::ai_player::Level::Medium);
+    let mut my_game: Game = Game::new(&mut player1, &mut player2, 13);
+    let printout = |s: &Game| {
+        println!("{:?}", s.board);
+    };
+    my_game.start_loop(printout);
+    println!("Game over. Winner is {}", my_game.winner().unwrap());
+    printout(&my_game);
+}
+
+fn try_out() {
     let mut player1 = HumanPlayer::new("Player1".to_string(), make_move);
     let mut player2 = HumanPlayer::new("Player2".to_string(), make_move);
 
