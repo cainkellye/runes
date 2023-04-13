@@ -130,29 +130,13 @@ impl<'a> Game<'a> {
 
     pub fn valid_symbols_at(&self, position: &Position) -> Vec<Field> {
         if !self.board.is_empty(position) {
-            return vec![];
+            return Vec::new();
         }
-        let around = self.board.fields_around(position);
-
-        let mut empty_count = 0;
-        let mut birth_count = 0;
-        let mut gift_count = 0;
-        let mut wealth_count = 0;
-        let mut knowledge_count = 0;
-
-        for field in &around {
-            match field {
-                Field::Empty => empty_count += 1,
-                Field::Birth => birth_count += 1,
-                Field::Gift => gift_count += 1,
-                Field::Wealth => wealth_count += 1,
-                Field::Knowledge => knowledge_count += 1,
-                Field::Joy => (),
-            }
-        }
+        let (empty_count, birth_count, gift_count, wealth_count, knowledge_count) = 
+            self.board.count_around(position);
 
         let mut valid = Vec::new();
-        if empty_count == around.len() {
+        if birth_count == 0 && gift_count == 0 && wealth_count == 0 && knowledge_count == 0 {
             valid.push(Field::Birth);
         } else {
             valid.push(Field::Gift);
@@ -187,6 +171,37 @@ impl<'a> Game<'a> {
                 if self.board.is_empty(&pos) {
                     moves.push(Move::new(pos, self.best_symbol_at(&pos)));
                 }
+            }
+        }
+        let player_symbol = self.next_player_symbol();
+        let mut my_winning = Vec::new();
+        let mut opp_winning = Vec::new();
+        for &m in &moves {
+            let (empty_count, birth_count, gift_count, wealth_count, _) = self.board.count_around(&m.position);
+            if birth_count == 1 && gift_count == 1 && empty_count == 5 {
+                if wealth_count == 1 { 
+                    if player_symbol == Field::Wealth {
+                        my_winning.push(m);
+                    } else {
+                        opp_winning.push(m);
+                    }
+                } else {
+                    if player_symbol == Field::Knowledge {
+                        my_winning.push(m);
+                    } else {
+                        opp_winning.push(m);
+                    }
+                }
+            }
+        }
+
+        if my_winning.len() > 0 {
+            return my_winning;
+        } else {
+            if opp_winning.len() > 0 {
+                moves = moves.into_iter()
+                .filter(|m| opp_winning.iter().any(|o| o.position.near(&m.position)))
+                .collect();
             }
         }
         return moves;

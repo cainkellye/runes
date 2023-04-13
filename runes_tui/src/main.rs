@@ -8,7 +8,7 @@ use runes_core::{
 fn main() {
     let mut player1 = AiPlayer::new(Level::Hard);
     let mut player2 = AiPlayer::new(Level::Hard);
-    let mut my_game: Game = Game::new(&mut player1, &mut player2, 9);
+    let mut my_game: Game = Game::new(&mut player1, &mut player2, 13);
     let printout = |s: &Game| {
         println!("{:?}", s.board);
     };

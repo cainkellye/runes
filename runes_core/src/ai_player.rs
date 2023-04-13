@@ -77,39 +77,25 @@ impl<'a> minimax::Evaluator for Eval<'a> {
     fn evaluate(&self, s: &<Self::G as minimax::Game>::S) -> minimax::Evaluation {
         let positions =
             (0..s.board.size).flat_map(|i| (0..s.board.size).map(move |j| Position(i, j)));
-        let mut score = 10;
+        let mut w_opp = 0;
+        let mut k_opp = 0;
         let next_player_symbol = s.next_player_symbol();
         for pos in positions {
-            let around = s.board.fields_around(&pos);
-            let mut empty_count = 0;
-            let mut birth_count = 0;
-            let mut gift_count = 0;
-            let mut wealth_count = 0;
-            let mut knowledge_count = 0;
-
-            for field in &around {
-                match field {
-                    Field::Empty => empty_count += 1,
-                    Field::Birth => birth_count += 1,
-                    Field::Gift => gift_count += 1,
-                    Field::Wealth => wealth_count += 1,
-                    Field::Knowledge => knowledge_count += 1,
-                    Field::Joy => (),
-                }
-            }
+            let (empty_count, birth_count, gift_count, wealth_count, knowledge_count) = 
+                s.board.count_around(&pos);
 
             if birth_count == 1 && gift_count == 1 && empty_count == 5 {
                 if wealth_count == 1 {
-                    score *= 10;
+                    w_opp += 1;
                 } else if knowledge_count == 1 {
-                    score /= 10;
+                    k_opp += 1;
                 }
             }
         }
         (if next_player_symbol == Field::Wealth {
-            score
+            w_opp * 2 - k_opp
         } else {
-            -score
+            k_opp * 2 - w_opp
         }) as minimax::Evaluation
     }
 }

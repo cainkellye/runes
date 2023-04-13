@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display};
+use std::{fmt::{Debug, Display}};
 
 #[derive(Clone)]
 pub struct Board {
@@ -8,8 +8,14 @@ pub struct Board {
 
 #[derive(Clone, Copy)]
 pub struct Position(pub usize, pub usize);
+impl Position {
+    pub fn near(&self, other: &Position) -> bool {
+        self.0.abs_diff(other.0) < 2
+        && self.1.abs_diff(other.1) < 2
+    } 
+}
 
-#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 #[repr(u8)]
 pub enum Field {
     Empty = 0,
@@ -43,6 +49,27 @@ impl Board {
             }
         }
         return around;
+    }
+
+    /// returns (empty_count, birth_count, gift_count, wealth_count, knowledge_count)
+    pub fn count_around(&self, pos: &Position) -> (u8,u8,u8,u8,u8) {
+        let mut empty_count = 0;
+        let mut birth_count = 0;
+        let mut gift_count = 0;
+        let mut wealth_count = 0;
+        let mut knowledge_count = 0;
+
+        for field in self.fields_around(pos) {
+            match field {
+                Field::Empty => empty_count += 1,
+                Field::Birth => birth_count += 1,
+                Field::Gift => gift_count += 1,
+                Field::Wealth => wealth_count += 1,
+                Field::Knowledge => knowledge_count += 1,
+                Field::Joy => (),
+            }
+        }
+        return (empty_count, birth_count, gift_count, wealth_count, knowledge_count);
     }
 
     pub fn is_empty(&self, pos: &Position) -> bool {
@@ -106,10 +133,10 @@ impl Debug for Field {
             match self {
                 Field::Empty => " ".to_string(),
                 Field::Birth => "B".to_string(),
-                Field::Gift => "X".b_green(),
+                Field::Gift => "X".green(),
                 Field::Wealth => "W".yellow(),
                 Field::Knowledge => "K".blue(),
-                Field::Joy => "J".red(),
+                Field::Joy => "J".b_redb(),
             }
         )
     }
