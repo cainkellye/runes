@@ -19,12 +19,16 @@ impl HumanPlayer {
     }
 }
 
-impl<'a> Player<'a> for HumanPlayer {
+impl Player for HumanPlayer {
     fn set_symbol(&mut self, symbol: Field) {
         self.symbol = symbol;
     }
 
-    fn make_move(&self, _: &Game) -> Move {
-        (self.make_move_callback)(&self)
+    fn make_move(&self, _: Game) -> Move {
+        (self.make_move_callback)(self)
+    }
+
+    fn name(&self) -> String {
+        self.name.clone()
     }
 }

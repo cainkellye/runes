@@ -1,4 +1,4 @@
-use std::{fmt::{Debug, Display}};
+use std::fmt::{Debug, Display};
 
 #[derive(Clone)]
 pub struct Board {
@@ -6,13 +6,12 @@ pub struct Board {
     pub size: usize,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Position(pub usize, pub usize);
 impl Position {
     pub fn near(&self, other: &Position) -> bool {
-        self.0.abs_diff(other.0) < 2
-        && self.1.abs_diff(other.1) < 2
-    } 
+        self.0.abs_diff(other.0) < 2 && self.1.abs_diff(other.1) < 2
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -48,11 +47,11 @@ impl Board {
                 around.push(self.fields[x * self.size + y]);
             }
         }
-        return around;
+        around
     }
 
     /// returns (empty_count, birth_count, gift_count, wealth_count, knowledge_count)
-    pub fn count_around(&self, pos: &Position) -> (u8,u8,u8,u8,u8) {
+    pub fn count_around(&self, pos: &Position) -> (u8, u8, u8, u8, u8) {
         let mut empty_count = 0;
         let mut birth_count = 0;
         let mut gift_count = 0;
@@ -69,7 +68,13 @@ impl Board {
                 Field::Joy => (),
             }
         }
-        return (empty_count, birth_count, gift_count, wealth_count, knowledge_count);
+        (
+            empty_count,
+            birth_count,
+            gift_count,
+            wealth_count,
+            knowledge_count,
+        )
     }
 
     pub fn is_empty(&self, pos: &Position) -> bool {
@@ -112,12 +117,12 @@ impl Display for Field {
             f,
             "{}",
             match self {
-                Field::Empty => " ".to_string(),
-                Field::Birth => "ᛒ".to_string(),
-                Field::Gift => "X".b_green(),
-                Field::Wealth => "ᚠ".yellow(),
-                Field::Knowledge => "<".blue(),
-                Field::Joy => "ᚹ".red(),
+                Field::Empty => "Empty".to_string(),
+                Field::Birth => "Berkana ᛒ".to_string(),
+                Field::Gift => "Gebo X".b_green(),
+                Field::Wealth => "Fehu ᚠ".yellow(),
+                Field::Knowledge => "Kano <".blue(),
+                Field::Joy => "Wunjo ᚹ".red(),
             }
         )
     }

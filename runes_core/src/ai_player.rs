@@ -1,5 +1,5 @@
-use minimax::{Negamax, Strategy};
-use std::{cell::RefCell, marker::PhantomData, rc::Rc};
+use minimax::{MCTSOptions, MonteCarloTreeSearch, Negamax, Random, Strategy};
+use std::cell::RefCell;
 
 use crate::{
     board::{Field, Position},
@@ -15,36 +15,105 @@ pub enum Level {
     VeryHard = 4,
 }
 
-pub struct AiPlayer<'a> {
+pub struct AiPlayerRandom {
     pub symbol: Field,
     pub level: Level,
-    strategy: Rc<RefCell<Negamax<Eval<'a>>>>,
+    strategy: RefCell<Random<Game>>,
 }
 
-impl<'a> AiPlayer<'a> {
+impl AiPlayerRandom {
     pub fn new(level: Level) -> Self {
-        AiPlayer {
+        AiPlayerRandom {
             symbol: Field::Empty,
             level,
-            strategy: Rc::new(RefCell::new(Negamax::new(Eval::default(), level as u8))),
+            strategy: RefCell::new(Random::new()),
         }
     }
 }
 
-impl<'a> Player<'a> for AiPlayer<'a> {
+impl Player for AiPlayerRandom {
     fn set_symbol(&mut self, symbol: Field) {
         self.symbol = symbol;
     }
 
-    fn make_move(&self, game: &Game<'a>) -> Move {
-        let mut strategy = self.strategy.borrow_mut();
-        let ai_move = strategy.choose_move(game);
-        return ai_move.unwrap();
+    fn make_move(&self, game: Game) -> Move {
+        let ai_move = self.strategy.borrow_mut().choose_move(&game);
+        ai_move.unwrap()
+    }
+
+    fn name(&self) -> String {
+        format!("AI {}", self.symbol)
     }
 }
 
-impl<'a> minimax::Game for Game<'a> {
-    type S = Game<'a>;
+pub struct AiPlayerMonte {
+    pub symbol: Field,
+    pub level: Level,
+    strategy: RefCell<MonteCarloTreeSearch<Game>>,
+}
+
+impl AiPlayerMonte {
+    pub fn new(level: Level) -> Self {
+        AiPlayerMonte {
+            symbol: Field::Empty,
+            level,
+            strategy: RefCell::new(MonteCarloTreeSearch::new(
+                MCTSOptions::default()
+                    .with_num_threads(3),
+            )),
+        }
+    }
+}
+
+impl Player for AiPlayerMonte {
+    fn set_symbol(&mut self, symbol: Field) {
+        self.symbol = symbol;
+    }
+
+    fn make_move(&self, game: Game) -> Move {
+        let ai_move = self.strategy.borrow_mut().choose_move(&game);
+        ai_move.unwrap()
+    }
+
+    fn name(&self) -> String {
+        format!("AI {}", self.symbol)
+    }
+}
+
+pub struct AiPlayer {
+    pub symbol: Field,
+    pub level: Level,
+    strategy: RefCell<Negamax<Eval>>,
+}
+
+impl AiPlayer {
+    pub fn new(level: Level) -> Self {
+        AiPlayer {
+            symbol: Field::Empty,
+            level,
+            strategy: RefCell::new(Negamax::new(Eval::default(), level as u8)),
+        }
+    }
+}
+
+impl Player for AiPlayer {
+    fn set_symbol(&mut self, symbol: Field) {
+        self.symbol = symbol;
+    }
+
+    fn make_move(&self, game: Game) -> Move {
+        let mut strategy = self.strategy.borrow_mut();
+        let ai_move = strategy.choose_move(&game);
+        ai_move.unwrap()
+    }
+
+    fn name(&self) -> String {
+        format!("AI {}", self.symbol)
+    }
+}
+
+impl minimax::Game for Game {
+    type S = Game;
     type M = Move;
 
     fn generate_moves(state: &Self::S, moves: &mut Vec<Self::M>) {
@@ -67,12 +136,10 @@ impl<'a> minimax::Game for Game<'a> {
         }
     }
 }
-#[derive(Default)]
-struct Eval<'a> {
-    ty: PhantomData<&'a ()>,
-}
-impl<'a> minimax::Evaluator for Eval<'a> {
-    type G = Game<'a>;
+#[derive(Default, Clone)]
+struct Eval {}
+impl minimax::Evaluator for Eval {
+    type G = Game;
 
     fn evaluate(&self, s: &<Self::G as minimax::Game>::S) -> minimax::Evaluation {
         let positions =
@@ -81,7 +148,7 @@ impl<'a> minimax::Evaluator for Eval<'a> {
         let mut k_opp = 0;
         let next_player_symbol = s.next_player_symbol();
         for pos in positions {
-            let (empty_count, birth_count, gift_count, wealth_count, knowledge_count) = 
+            let (empty_count, birth_count, gift_count, wealth_count, knowledge_count) =
                 s.board.count_around(&pos);
 
             if birth_count == 1 && gift_count == 1 && empty_count == 5 {
@@ -93,9 +160,9 @@ impl<'a> minimax::Evaluator for Eval<'a> {
             }
         }
         (if next_player_symbol == Field::Wealth {
-            w_opp * 2 - k_opp
+            w_opp * 3 - k_opp
         } else {
-            k_opp * 2 - w_opp
+            k_opp * 3 - w_opp
         }) as minimax::Evaluation
     }
 }
