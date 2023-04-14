@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Display};
+use colorize::AnsiColor;
 
 #[derive(Clone)]
 pub struct Board {
@@ -81,10 +82,6 @@ impl Board {
         self.fields[pos.0 * self.size + pos.1] == Field::Empty
     }
 
-    pub fn is_joy(&self, pos: &Position) -> bool {
-        self.fields[pos.0 * self.size + pos.1] == Field::Joy
-    }
-
     pub fn reset(&mut self) {
         self.fields = vec![Field::Empty; self.size * self.size];
     }
@@ -94,10 +91,33 @@ impl Board {
     }
 }
 
-impl Debug for Board {
+impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        //Header
+        write!(f, "    ")?;
         for i in 0..self.size {
-            write!(f, "[")?;
+            write!(
+                f,
+                "{}",
+                if i % 2 == 0 {
+                    format!("{:<6}", i + 1).bold().cyan()
+                } else {
+                    String::new()
+                }
+            )?;
+        }
+        writeln!(f)?;
+        //Board
+        for i in 0..self.size {
+            write!(
+                f,
+                "{} [ ",
+                if i % 2 == 0 {
+                    format!("{:2}", i + 1).bold().cyan()
+                } else {
+                    "  ".to_string()
+                }
+            )?;
             for j in 0..self.size {
                 write!(f, "{:?}", self.fields[i * self.size + j])?;
                 if j < self.size - 1 {
@@ -112,7 +132,6 @@ impl Debug for Board {
 
 impl Display for Field {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use colorize::AnsiColor;
         write!(
             f,
             "{}",
@@ -130,7 +149,6 @@ impl Display for Field {
 
 impl Debug for Field {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use colorize::AnsiColor;
         //write!(f, "{}", *self as u8)
         write!(
             f,

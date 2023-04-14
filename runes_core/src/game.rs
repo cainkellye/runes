@@ -127,7 +127,7 @@ impl Game {
         PLAYER_SYMBOLS[self.next_player as usize]
     }
 
-    fn _is_valid_move(&self, move_to_check: &Move) -> bool {
+    pub fn is_valid_move(&self, move_to_check: &Move) -> bool {
         let pos = &move_to_check.position;
         //boundary check
         pos.0 < self.board.size && pos.1 < self.board.size

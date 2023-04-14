@@ -5,12 +5,15 @@ use crate::{
 
 pub struct HumanPlayer {
     pub name: String,
-    pub make_move_callback: fn(player: &HumanPlayer) -> Move,
+    pub make_move_callback: fn(player: &HumanPlayer, game: Game) -> Move,
     pub symbol: Field,
 }
 
 impl HumanPlayer {
-    pub fn new(name: String, make_move_callback: fn(player: &HumanPlayer) -> Move) -> Self {
+    pub fn new(
+        name: String,
+        make_move_callback: fn(player: &HumanPlayer, game: Game) -> Move,
+    ) -> Self {
         HumanPlayer {
             name,
             make_move_callback,
@@ -24,8 +27,8 @@ impl Player for HumanPlayer {
         self.symbol = symbol;
     }
 
-    fn make_move(&self, _: Game) -> Move {
-        (self.make_move_callback)(self)
+    fn make_move(&self, game: Game) -> Move {
+        (self.make_move_callback)(self, game)
     }
 
     fn name(&self) -> String {

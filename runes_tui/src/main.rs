@@ -1,16 +1,20 @@
+use std::io::{stdin, stdout, Write};
+
 use runes_core::{
-    ai_player::{AiPlayer, Level},
+    ai_player::{AiPlayer, AiPlayerMonte, Level},
     board::{Field, Position},
-    game::{Move, Session},
+    game::{Game, Move, Session},
     human_player::HumanPlayer,
 };
 
 fn main() {
-    let player1 = Box::new(AiPlayer::new(Level::Medium));
-    let player2 = Box::new(AiPlayer::new(Level::Medium));
+    let player1 = Box::new(AiPlayerMonte::new(Level::Easy));
+    //let player1 = Box::new(AiPlayer::new(Level::Medium));
+    //let player2 = Box::new(AiPlayerMonte::new(Level::Easy));
+    let player2 = Box::new(HumanPlayer::new("Apa".to_string(), make_move));
     let mut my_session: Session = Session::new(player1, player2, 13);
     let printout = |s: &Session| {
-        println!("{:?}", s.game.board);
+        println!("{}", s.game.board);
     };
     my_session.start_loop(printout);
     if let Some(s) = my_session.winner() {
@@ -51,7 +55,26 @@ fn main() {
 //     println!("Best2 (7,5): {:?}", best);
 // }
 
-fn _make_move(player: &HumanPlayer) -> Move {
-    println!("Your Turn: {} ({:?})", player.name, player.symbol);
-    Move::new(Position(0, 0), Field::Birth)
+fn make_move(player: &HumanPlayer, game: Game) -> Move {
+    println!("Your Turn: {} ({})", player.name, player.symbol);
+    loop {
+        print!("Move (row, col): ");
+        stdout().flush().unwrap();
+        let mut input = String::new();
+        stdin().read_line(&mut input).unwrap();
+        if let Some(p) = input
+            .split_once(',')
+            .and_then(|s| Some(Position(s.0.trim().parse().ok()?, s.1.trim().parse().ok()?)))
+        {
+            let p = Position(p.0 - 1, p.1 - 1);
+            let m = Move::new(p, game.best_symbol_at(&p));
+            if game.is_valid_move(&m) {
+                return m;
+            } else {
+                println!("Invalid move. Try again!");
+            }
+        } else {
+            println!("Wrong input. Write row number and column number separated by a comma.");
+        }
+    }
 }

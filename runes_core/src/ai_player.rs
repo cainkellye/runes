@@ -1,5 +1,5 @@
 use minimax::{MCTSOptions, MonteCarloTreeSearch, Negamax, Random, Strategy};
-use std::cell::RefCell;
+use std::{cell::RefCell, time::Duration};
 
 use crate::{
     board::{Field, Position},
@@ -37,12 +37,11 @@ impl Player for AiPlayerRandom {
     }
 
     fn make_move(&self, game: Game) -> Move {
-        let ai_move = self.strategy.borrow_mut().choose_move(&game);
-        ai_move.unwrap()
+        self.strategy.borrow_mut().choose_move(&game).unwrap()
     }
 
     fn name(&self) -> String {
-        format!("AI {}", self.symbol)
+        format!("AI Dumb {}", self.symbol)
     }
 }
 
@@ -54,13 +53,16 @@ pub struct AiPlayerMonte {
 
 impl AiPlayerMonte {
     pub fn new(level: Level) -> Self {
+        let mut mcts = MonteCarloTreeSearch::new(
+            MCTSOptions::default()
+                .with_max_rollout_depth(5)
+                .with_num_threads(4),
+        );
+        mcts.set_timeout(Duration::from_millis(level as u64 * 200 + 100));
         AiPlayerMonte {
             symbol: Field::Empty,
             level,
-            strategy: RefCell::new(MonteCarloTreeSearch::new(
-                MCTSOptions::default()
-                    .with_num_threads(3),
-            )),
+            strategy: RefCell::new(mcts),
         }
     }
 }
@@ -71,12 +73,11 @@ impl Player for AiPlayerMonte {
     }
 
     fn make_move(&self, game: Game) -> Move {
-        let ai_move = self.strategy.borrow_mut().choose_move(&game);
-        ai_move.unwrap()
+        self.strategy.borrow_mut().choose_move(&game).unwrap()
     }
 
     fn name(&self) -> String {
-        format!("AI {}", self.symbol)
+        format!("AI Monte {}", self.symbol)
     }
 }
 
@@ -108,7 +109,7 @@ impl Player for AiPlayer {
     }
 
     fn name(&self) -> String {
-        format!("AI {}", self.symbol)
+        format!("AI Max {}", self.symbol)
     }
 }
 
