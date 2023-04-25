@@ -2,8 +2,10 @@
 members = [
   "runes_core",
   "runes_tui",
+  "runes_egui",
 ]
 
 default-members = [
-  "runes_tui"
+  #"runes_tui",
+  "runes_egui",
 ]

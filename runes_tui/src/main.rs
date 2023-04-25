@@ -1,8 +1,9 @@
 use std::io::{stdin, stdout, Write};
 
 use runes_core::{
-    ai_player::{AiPlayer, AiPlayerMonte, Level},
-    board::{Field, Position},
+    //ai_player::{AiPlayer, AiPlayerMonte, Level},
+    ai_player::{AiPlayerMonte, Level},
+    board::Position,
     game::{Game, Move, Session},
     human_player::HumanPlayer,
 };

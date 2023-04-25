@@ -1,0 +1,13 @@
+[package]
+name = "runes_egui"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+runes_core = { version = "*", path = "../runes_core" }
+eframe = "0.21.3"
+egui = "0.21.0"
+egui_extras = { version = "0.21.0", features = ["image"] }
+image = { version = "0.24", default-features = false, features = ["png"] }
