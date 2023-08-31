@@ -89,6 +89,10 @@ impl Board {
     pub fn is_full(&self) -> bool {
         self.fields.iter().all(|&f| f != Field::Empty)
     }
+
+    pub fn field_at(&self, pos: &Position) -> Field {
+        self.fields[pos.0 * self.size + pos.1]
+    }
 }
 
 impl Display for Board {

@@ -4,7 +4,7 @@ use runes_core::{
     //ai_player::{AiPlayer, AiPlayerMonte, Level},
     ai_player::{AiPlayerMonte, Level},
     board::Position,
-    game::{Game, Move, Session},
+    game::{Game, Move, Player, PLAYER_SYMBOLS},
     human_player::HumanPlayer,
 };
 
@@ -77,5 +77,44 @@ fn make_move(player: &HumanPlayer, game: Game) -> Move {
         } else {
             println!("Wrong input. Write row number and column number separated by a comma.");
         }
+    }
+}
+
+pub struct Session {
+    pub players: [Box<dyn Player>; 2],
+    pub game: Game,
+}
+
+impl Session {
+    pub fn new(player1: Box<dyn Player>, player2: Box<dyn Player>, board_size: usize) -> Self {
+        let mut players = [player1, player2];
+        players[0].set_symbol(PLAYER_SYMBOLS[0]);
+        players[1].set_symbol(PLAYER_SYMBOLS[1]);
+        Self {
+            players,
+            game: Game::new(board_size),
+        }
+    }
+
+    pub fn start_loop(&mut self, callback: fn(&Self)) {
+        while !self.game.game_over {
+            callback(self);
+            let next_player = self.game.next_player;
+            let player_move = self.players[next_player as usize].make_move(self.game.clone());
+            match self.game.apply_move(player_move) {
+                Ok(_) => (),
+                Err(s) => println!("{s}"),
+            }
+        }
+    }
+
+    pub fn winner(&self) -> Option<String> {
+        self.game
+            .winner()
+            .map(|idx| self.players[idx as usize].name())
+    }
+
+    pub fn reset(&mut self) {
+        self.game.reset();
     }
 }

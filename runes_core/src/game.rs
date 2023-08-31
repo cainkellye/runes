@@ -1,11 +1,9 @@
+use std::ops::{DerefMut, Deref};
+
 use crate::board::{Board, Field, Position};
 
-const PLAYER_SYMBOLS: [Field; 2] = [Field::Wealth, Field::Knowledge];
+pub const PLAYER_SYMBOLS: [Field; 2] = [Field::Wealth, Field::Knowledge];
 
-pub struct Session {
-    pub players: [Box<dyn Player>; 2],
-    pub game: Game,
-}
 
 #[derive(Clone)]
 pub struct Game {
@@ -27,6 +25,20 @@ impl Move {
     }
 }
 
+
+impl Deref for Move {
+    type Target = Move;
+
+    fn deref(&self) -> &Self::Target {
+        self
+    }
+}
+impl DerefMut for Move {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self
+    }
+}
+
 pub trait Player {
     fn set_symbol(&mut self, symbol: Field);
     fn make_move(&self, board: Game) -> Move;
@@ -38,40 +50,6 @@ pub trait Player {
 //         *self as *const _ == *other as *const _
 //     }
 // }
-
-impl Session {
-    pub fn new(player1: Box<dyn Player>, player2: Box<dyn Player>, board_size: usize) -> Self {
-        let mut players = [player1, player2];
-        players[0].set_symbol(PLAYER_SYMBOLS[0]);
-        players[1].set_symbol(PLAYER_SYMBOLS[1]);
-        Self {
-            players,
-            game: Game::new(board_size),
-        }
-    }
-
-    pub fn start_loop(&mut self, callback: fn(&Self)) {
-        while !self.game.game_over {
-            callback(self);
-            let next_player = self.game.next_player;
-            let player_move = self.players[next_player as usize].make_move(self.game.clone());
-            match self.game.apply_move(player_move) {
-                Ok(_) => (),
-                Err(s) => println!("{s}"),
-            }
-        }
-    }
-
-    pub fn winner(&self) -> Option<String> {
-        self.game
-            .winner()
-            .map(|idx| self.players[idx as usize].name())
-    }
-
-    pub fn reset(&mut self) {
-        self.game.reset();
-    }
-}
 
 impl Game {
     pub fn new(board_size: usize) -> Self {
@@ -109,10 +87,14 @@ impl Game {
         }
     }
 
+    pub fn apply_best_move_at(&mut self, position: &Position)  -> Result<Field, String> {
+        self.apply_move(Move::new(*position, self.best_symbol_at(position)))
+    }
+
     pub fn apply_move(&mut self, move_to_apply: Move) -> Result<Field, String> {
-        // if !self.is_valid_move(&move_to_apply) {
-        //     return Err("Invalid move".to_string());
-        // }
+        if !self.is_valid_move(&move_to_apply) {
+            return Err("Invalid move".to_string());
+        }
         self.board
             .change(move_to_apply.position, move_to_apply.symbol);
         self.last_move = Some(move_to_apply);
