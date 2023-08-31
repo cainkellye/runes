@@ -34,7 +34,7 @@ struct MyEguiApp {
     store: Vec<RetainedImage>,
     pub images: TextureIds,
     game: Game,
-    ai_player: Box<dyn Player>,
+    ai_level: Level,
     ai_move: Arc<Mutex<Option<Move>>>,
 }
 
@@ -65,12 +65,9 @@ impl MyEguiApp {
             ).unwrap(),
         ];
 
-        let mut ai_player = Box::new(AiPlayerMonte::new(Level::Medium));
-        //let player1 = Box::new(AiPlayer::new(Level::Medium));
-        //let player2 = Box::new(AiPlayerMonte::new(Level::Easy));
+        let ai_level = Level::Medium;
         let mut game = Game::new(13);
-        ai_player.set_symbol(PLAYER_SYMBOLS[0]);
-        let ai_first = ai_player.make_move(game.clone());
+        let ai_first = AiPlayerMonte::new(Level::Medium).make_move(game.clone());
         game.apply_move(ai_first).unwrap();
 
         Self {
@@ -85,7 +82,7 @@ impl MyEguiApp {
             },
             store,
             game,
-            ai_player,
+            ai_level,
             ai_move: Arc::new(Mutex::new(None)),
         }
     }
@@ -98,6 +95,8 @@ impl MyEguiApp {
         ui.vertical(|ui| {
             if ui.button("New Game").clicked() {
                 self.game = Game::new(self.game.board.size);
+                let ai_first = AiPlayerMonte::new(Level::Medium).make_move(self.game.clone());
+                self.game.apply_move(ai_first).unwrap();
             };
             let grid_response = ui
                 .add(WireGrid {
@@ -111,8 +110,9 @@ impl MyEguiApp {
                     Ok(_) if !self.game.game_over => {
                         let ai_move = self.ai_move.clone();
                         let ai_board = self.game.clone();
+                        let ai_level = self.ai_level.clone();
                         thread::spawn(move || {
-                            let ai = AiPlayerMonte::new(Level::Medium);
+                            let ai = AiPlayerMonte::new(ai_level);
                             let made = ai.make_move(ai_board);
                             let mut x = ai_move.lock().unwrap();
                             *x = Some(made);
