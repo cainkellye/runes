@@ -47,12 +47,16 @@ impl Widget for WireGrid {
             match field {
                 Field::Empty => ui.painter().rect(
                                     Rect::from_two_pos(p1, p2),
-                                    Rounding::none(),
+                                    Rounding::same(3.0),
                                     Color32::from_rgb(80, 80, 80),
                                     Stroke::new(1.0, Color32::BLACK),
                                 ),
                 f => {
                     let uv = Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0));
+                    ui.painter().image(self.textures.stone1, 
+                        Rect::from_min_max(p1, p2).shrink(2.0),
+                    uv,
+                    Color32::WHITE);
                     ui.painter().image(
                         match f {
                             Field::Birth => self.textures.birth,
@@ -60,9 +64,9 @@ impl Widget for WireGrid {
                             Field::Wealth => self.textures.wealth,
                             Field::Knowledge => self.textures.knowledge,
                             Field::Joy => self.textures.joy,
-                            Field::Empty => self.textures.birth,
+                            Field::Empty => self.textures.stone1,
                         },
-                        Rect::from_min_max(p1, p2).shrink(3.0),
+                        Rect::from_min_max(p1, p2).shrink(2.0),
                         uv,
                         Color32::WHITE,
                     );

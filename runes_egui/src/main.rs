@@ -1,5 +1,7 @@
 //mod widgets;
 mod wiregrid;
+use std::{sync::{Arc, Mutex}, thread};
+
 use runes_core::{game::{Game, Move, Player, PLAYER_SYMBOLS}, board::Position, ai_player::{AiPlayerMonte, Level}};
 use wiregrid::WireGrid;
 
@@ -24,6 +26,7 @@ pub struct TextureIds {
     pub wealth: TextureId,
     pub knowledge: TextureId,
     pub joy: TextureId,
+    pub stone1: TextureId,
 }
 
 struct MyEguiApp {
@@ -32,6 +35,7 @@ struct MyEguiApp {
     pub images: TextureIds,
     game: Game,
     ai_player: Box<dyn Player>,
+    ai_move: Arc<Mutex<Option<Move>>>,
 }
 
 impl MyEguiApp {
@@ -56,6 +60,9 @@ impl MyEguiApp {
             RetainedImage::from_image_bytes(
             "joy.png", include_bytes!("../res/joy.png"),
             ).unwrap(),
+            RetainedImage::from_image_bytes(
+            "joy.png", include_bytes!("../res/stone1.png"),
+            ).unwrap(),
         ];
 
         let mut ai_player = Box::new(AiPlayerMonte::new(Level::Medium));
@@ -74,14 +81,20 @@ impl MyEguiApp {
                 knowledge: store[2].texture_id(&cc.egui_ctx),
                 wealth: store[3].texture_id(&cc.egui_ctx),
                 joy: store[4].texture_id(&cc.egui_ctx),
+                stone1: store[5].texture_id(&&cc.egui_ctx),
             },
             store,
             game,
             ai_player,
+            ai_move: Arc::new(Mutex::new(None)),
         }
     }
 
     fn main_ui(&mut self, ui: &mut Ui) -> InnerResponse<()> {
+        if let Some(ai_move) = self.ai_move.lock().unwrap().take() {
+            self.game.apply_move(ai_move).unwrap();
+        }
+        
         ui.vertical(|ui| {
             if ui.button("New Game").clicked() {
                 self.game = Game::new(self.game.board.size);
@@ -95,10 +108,17 @@ impl MyEguiApp {
             {
                 let clicked = WireGrid::get_clicked_cell(self.size, &grid_response);
                 match self.game.apply_best_move_at(&Position(clicked.0, clicked.1)) {
-                    Ok(_) => if !self.game.game_over {
-                        let ai_move = self.ai_player.make_move(self.game.clone());
-                        self.game.apply_move(ai_move).unwrap();
+                    Ok(_) if !self.game.game_over => {
+                        let ai_move = self.ai_move.clone();
+                        let ai_board = self.game.clone();
+                        thread::spawn(move || {
+                            let ai = AiPlayerMonte::new(Level::Medium);
+                            let made = ai.make_move(ai_board);
+                            let mut x = ai_move.lock().unwrap();
+                            *x = Some(made);
+                        });
                     },
+                    Ok(_) => (),
                     Err(_) => (), //Messagebox
                 }
             };
