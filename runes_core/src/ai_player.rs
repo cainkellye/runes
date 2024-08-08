@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[repr(u8)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Level {
     Easy = 1,
     Medium = 2,
@@ -58,7 +58,7 @@ impl AiPlayerMonte {
                 .with_max_rollout_depth(5)
                 .with_num_threads(4),
         );
-        mcts.set_timeout(Duration::from_millis(level as u64 * 200 + 100));
+        mcts.set_timeout(Duration::from_millis(level as u64 * 300));
         AiPlayerMonte {
             symbol: Field::Empty,
             level,

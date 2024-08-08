@@ -28,6 +28,9 @@ impl Widget for WireGrid {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let (rect, response) = ui.allocate_at_least(ui.available_size(), Sense::click());
         let cell_size = WireGrid::calculate_cell_size(self.board.size, rect);
+        let uv = Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0));
+
+        ui.painter().image(self.textures.table, rect, uv, Color32::WHITE);
 
         let coords =
             (0..self.board.size).flat_map(move |i| (0..self.board.size).map(move |j| (i, j)));
@@ -47,13 +50,12 @@ impl Widget for WireGrid {
             match field {
                 Field::Empty => ui.painter().rect(
                                     Rect::from_two_pos(p1, p2),
-                                    Rounding::same(3.0),
-                                    Color32::from_rgb(80, 80, 80),
+                                    Rounding::same(0.0),
+                                    Color32::TRANSPARENT,
                                     Stroke::new(1.0, Color32::BLACK),
                                 ),
                 f => {
-                    let uv = Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0));
-                    ui.painter().image(self.textures.stone1, 
+                    ui.painter().image(self.textures.stone2, 
                         Rect::from_min_max(p1, p2).shrink(2.0),
                     uv,
                     Color32::WHITE);
