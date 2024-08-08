@@ -1,12 +1,18 @@
-//mod widgets;
 mod wiregrid;
-use std::{sync::{Arc, Mutex}, thread};
+use std::{
+    sync::{Arc, Mutex},
+    thread,
+};
 
-use runes_core::{game::{Game, Move, Player, PLAYER_SYMBOLS}, board::Position, ai_player::{AiPlayerMonte, Level}};
+use runes_core::{
+    ai_player::{AiPlayerMonte, Level},
+    board::Position,
+    game::{Game, Move, Player},
+};
 use wiregrid::WireGrid;
 
 use eframe::egui;
-use egui::{InnerResponse, Slider, TextureId, Ui, Vec2, ComboBox};
+use egui::{ComboBox, InnerResponse, TextureId, Ui};
 use egui_extras::RetainedImage;
 
 fn main() {
@@ -47,30 +53,23 @@ impl MyEguiApp {
         // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
         // for e.g. egui::PaintCallback.
         let store = vec![
+            RetainedImage::from_image_bytes("birth.png", include_bytes!("../res/birth.png"))
+                .unwrap(),
+            RetainedImage::from_image_bytes("gift.png", include_bytes!("../res/gift.png")).unwrap(),
             RetainedImage::from_image_bytes(
-            "birth.png", include_bytes!("../res/birth.png"),
-            ).unwrap(),
-            RetainedImage::from_image_bytes(
-            "gift.png", include_bytes!("../res/gift.png"),
-            ).unwrap(),
-            RetainedImage::from_image_bytes(
-            "knowledge.png", include_bytes!("../res/knowledge.png"),
-            ).unwrap(),
-            RetainedImage::from_image_bytes(
-            "wealth.png", include_bytes!("../res/wealth.png"),
-            ).unwrap(),
-            RetainedImage::from_image_bytes(
-            "joy.png", include_bytes!("../res/joy.png"),
-            ).unwrap(),
-            RetainedImage::from_image_bytes(
-            "table.png", include_bytes!("../res/table.png"),
-            ).unwrap(),
-            RetainedImage::from_image_bytes(
-            "stone1.png", include_bytes!("../res/stone1.png"),
-            ).unwrap(),
-            RetainedImage::from_image_bytes(
-            "stone2.png", include_bytes!("../res/stone2.png"),
-            ).unwrap(),
+                "knowledge.png",
+                include_bytes!("../res/knowledge.png"),
+            )
+            .unwrap(),
+            RetainedImage::from_image_bytes("wealth.png", include_bytes!("../res/wealth.png"))
+                .unwrap(),
+            RetainedImage::from_image_bytes("joy.png", include_bytes!("../res/joy.png")).unwrap(),
+            RetainedImage::from_image_bytes("table.png", include_bytes!("../res/table.png"))
+                .unwrap(),
+            RetainedImage::from_image_bytes("stone1.png", include_bytes!("../res/stone1.png"))
+                .unwrap(),
+            RetainedImage::from_image_bytes("stone2.png", include_bytes!("../res/stone2.png"))
+                .unwrap(),
         ];
 
         let ai_level = Level::Medium;
@@ -80,15 +79,15 @@ impl MyEguiApp {
 
         Self {
             size: game.board.size,
-            images: TextureIds { 
+            images: TextureIds {
                 birth: store[0].texture_id(&cc.egui_ctx),
                 gift: store[1].texture_id(&cc.egui_ctx),
                 knowledge: store[2].texture_id(&cc.egui_ctx),
                 wealth: store[3].texture_id(&cc.egui_ctx),
                 joy: store[4].texture_id(&cc.egui_ctx),
-                table: store[5].texture_id(&&cc.egui_ctx),
-                stone1: store[6].texture_id(&&cc.egui_ctx),
-                stone2: store[7].texture_id(&&cc.egui_ctx),
+                table: store[5].texture_id(&cc.egui_ctx),
+                stone1: store[6].texture_id(&cc.egui_ctx),
+                stone2: store[7].texture_id(&cc.egui_ctx),
             },
             _store: store,
             game,
@@ -101,7 +100,7 @@ impl MyEguiApp {
         if let Some(ai_move) = self.ai_move.lock().unwrap().take() {
             self.game.apply_move(ai_move).unwrap();
         }
-        
+
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
                 if ui.button("New Game").clicked() {
@@ -110,27 +109,28 @@ impl MyEguiApp {
                     self.game.apply_move(ai_first).unwrap();
                 };
                 ComboBox::from_label("AI Level")
-                .selected_text(format!("{:?}", self.ai_level))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.ai_level, Level::Easy, "Easy");
-                    ui.selectable_value(&mut self.ai_level, Level::Medium, "Medium");
-                    ui.selectable_value(&mut self.ai_level, Level::Hard, "Hard");
-                    ui.selectable_value(&mut self.ai_level, Level::VeryHard, "VeryHard");
-                });
+                    .selected_text(format!("{:?}", self.ai_level))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut self.ai_level, Level::Easy, "Easy");
+                        ui.selectable_value(&mut self.ai_level, Level::Medium, "Medium");
+                        ui.selectable_value(&mut self.ai_level, Level::Hard, "Hard");
+                        ui.selectable_value(&mut self.ai_level, Level::VeryHard, "VeryHard");
+                    });
             });
-            let grid_response = ui
-                .add(WireGrid {
-                    board: self.game.board.clone(),
-                    textures: self.images,
-                });
-            if !self.game.game_over && self.game.next_player == 1  && grid_response.clicked()
-            {
+            let grid_response = ui.add(WireGrid {
+                board: self.game.board.clone(),
+                textures: self.images,
+            });
+            if !self.game.game_over && self.game.next_player == 1 && grid_response.clicked() {
                 let clicked = WireGrid::get_clicked_cell(self.size, &grid_response);
-                match self.game.apply_best_move_at(&Position(clicked.0, clicked.1)) {
+                match self
+                    .game
+                    .apply_best_move_at(&Position(clicked.0, clicked.1))
+                {
                     Ok(_) if !self.game.game_over => {
                         let ai_move = self.ai_move.clone();
                         let ai_board = self.game.clone();
-                        let ai_level = self.ai_level.clone();
+                        let ai_level = self.ai_level;
                         let ctx = ui.ctx().clone();
                         thread::spawn(move || {
                             let ai = AiPlayerMonte::new(ai_level);
@@ -139,7 +139,7 @@ impl MyEguiApp {
                             *x = Some(made);
                             ctx.request_repaint();
                         });
-                    },
+                    }
                     Ok(_) => (),
                     Err(_) => (), //Messagebox
                 }
